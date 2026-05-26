@@ -234,7 +234,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
       <svg viewBox="0 0 23 23" fill="none"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="12" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="12" width="10" height="10" fill="#00A4EF"/><rect x="12" y="12" width="10" height="10" fill="#FFB900"/></svg>
       <span id="lbtxt">Iniciando...</span>
     </button>
-    <div class="lnote">Solo para usuarios de grupojinca.com</div>
+    <div class="lnote">Iniciá sesión con asistentegerenciaGj@hotmail.com</div>
     <div class="lerr" id="lerr"></div>
     <div class="lstat" id="lstat"></div>
   </div>
@@ -328,8 +328,8 @@ const TENANT_ID = '49d98c02-c711-4b27-98de-eb5e1ebc9936';
 const REDIRECT  = window.location.origin + window.location.pathname;
 // Link compartido del Excel en OneDrive
 const EXCEL_SHARE = 'https://1drv.ms/x/c/87117b9ef9119dbe/IQAgiVoZvm54QpAgyUGgGGEsAdOprXWFd4dv4-NrRYgpahg?e=2moFLO';
-const AUTHORITY = 'https://login.microsoftonline.com/' + TENANT_ID;
-const SCOPES    = ['User.Read', 'Files.Read.All'];
+const AUTHORITY = 'https://login.microsoftonline.com/common';
+const SCOPES    = ['User.Read', 'Files.Read', 'Files.Read.All'];
 
 // ════════════════════════════════════════
 //  DATOS
@@ -419,8 +419,9 @@ async function refreshData(){
     const token=await getToken();
     if(!token)return;
     // Codificar el share URL para Graph API
-    const enc=btoa(EXCEL_SHARE).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    const url=`https://graph.microsoft.com/v1.0/shares/u!${enc}/driveItem/content`;
+    // Ruta directa al archivo en OneDrive personal
+    const filePath = '/Desktop/INFORMACION GERENCIA OPERACIONES/INVENTARIOS/7. Cubo Control Ordenes de Producción.xlsx';
+    const url = `https://graph.microsoft.com/v1.0/me/drive/root:${encodeURIComponent(filePath).replace(/%2F/g,'/')}:/content`;
     const res=await fetch(url,{headers:{Authorization:'Bearer '+token,Accept:'application/octet-stream'}});
     if(!res.ok){
       const txt=await res.text().catch(()=>'');
