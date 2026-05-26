@@ -445,7 +445,8 @@ function parseExcel(buf){
   const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
   const nc=[],seen=new Set();
   for(const row of rows){
-    const orden=String(row['ordenproduccion']||row['OrdenProduccion']||row['ORDENPRODUCCION']||'').trim();
+    // Columnas exactas del Excel de Softland - Grupo Jinca
+    const orden=String(row['OrdenProduccion']||row['ordenproduccion']||row['ORDENPRODUCCION']||'').trim();
     const estado=String(row['EstadoOrden']||row['estadoordenproduccion']||row['ESTADO']||'').trim();
     if(!orden||estado==='Cancelada'||seen.has(orden))continue;
     seen.add(orden);
@@ -453,11 +454,20 @@ function parseExcel(buf){
     const familia=String(row['Familia']||row['FAMILIA']||'').trim();
     const turno=parseInt(row['Turno']||row['TURNO']||0)||0;
     let fecha='';
-    const rf=row['FechaCreacion']||row['fechacreacion']||row['Fecha']||'';
+    const rf=row['Fecha_Creacion']||row['FechaCreacion']||row['fechacreacion']||'';
     if(rf instanceof Date)fecha=rf.toISOString().slice(0,10);
     else if(typeof rf==='string'&&rf)fecha=rf.slice(0,10);
     const sf=mF(estado),fase=overrides[orden]?.fase||sf;
-    nc.push({tipo,fecha,cod:String(row['cod_articulo']||row['CodArticulo']||'').trim(),nombre:String(row['articulo']||row['Articulo']||'').trim(),orden,estado,familia,turno,fase,lote:String(row['lote_produccion']||row['LoteProduccion']||'').trim(),cantProd:parseFloat(row['cantidad']||0)||0,cantEst:parseFloat(row['cantidad_estandar']||row['CantidadEstandar']||0)||0,responsable:String(row['Responsable']||row['RESPONSABLE']||'Sin asignar').trim()||'Sin asignar',linea:gL({tipo,familia,turno}),hist:overrides[orden]?.hist||[{fase:sf,ts:fecha+' (Softland)'}]});
+    nc.push({tipo,fecha,
+      cod:String(row['Cod_Articulo']||row['cod_articulo']||row['CodArticulo']||'').trim(),
+      nombre:String(row['Articulo']||row['articulo']||row['ARTICULO']||'').trim(),
+      orden,estado,familia,turno,fase,
+      lote:String(row['Lote_Produccion']||row['lote_produccion']||row['LoteProduccion']||'').trim(),
+      cantProd:parseFloat(row['CantidadProducida']||row['cantidad']||row['Cantidad']||0)||0,
+      cantEst:parseFloat(row['CantidadEstandar']||row['cantidad_estandar']||row['Cantidad_Estandar']||0)||0,
+      responsable:String(row['Responsable']||row['RESPONSABLE']||row['Lider']||'Sin asignar').trim()||'Sin asignar',
+      linea:gL({tipo,familia,turno}),
+      hist:overrides[orden]?.hist||[{fase:sf,ts:fecha+' (Softland)'}]});
   }
   cards=nc;
   const lids=[...new Set(cards.map(c=>c.responsable))].filter(l=>l&&l!=='Sin asignar').sort();
