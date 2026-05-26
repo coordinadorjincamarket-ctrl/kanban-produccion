@@ -127,6 +127,16 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   .tab:hover{color:var(--text)}
   .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
   .fbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .ms-wrap{position:relative;display:inline-block}
+  .ms-btn{padding:5px 10px;font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;color:var(--text);font-family:inherit;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all .12s}
+  .ms-btn:hover,.ms-btn.active{border-color:var(--accent);color:var(--accent);background:#EBF0FD}
+  .ms-drop{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:6px;min-width:180px;z-index:100;box-shadow:var(--sh2)}
+  .ms-drop.open{display:block}
+  .ms-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;border-radius:var(--r);transition:background .1s;user-select:none}
+  .ms-opt:hover{background:var(--bg)}
+  .ms-opt input{cursor:pointer;accent-color:var(--accent)}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:#EBF0FD;color:var(--accent);border-radius:99px;font-size:11px;font-weight:500}
+  .chip button{background:none;border:none;cursor:pointer;color:var(--accent);font-size:12px;padding:0;line-height:1}
   .flbl{font-size:12px;color:var(--text2)}
   select{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit}
   .srow{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:14px}
@@ -221,6 +231,35 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   .toast.err{background:var(--danger)}
   .view{display:none}
   .view.shown{display:block}
+  /* ROLES */
+  .role-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:600}
+  .role-admin{background:#FEF3C7;color:#92400E}
+  .role-operator{background:#E0F2FE;color:#0369A1}
+  /* ADMIN PANEL */
+  .admin-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px}
+  .admin-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .user-table{width:100%;border-collapse:collapse}
+  .user-table th{font-size:11px;font-weight:600;color:var(--text2);padding:8px 12px;border-bottom:1px solid var(--border);text-align:left}
+  .user-table td{font-size:13px;padding:8px 12px;border-bottom:1px solid var(--border)}
+  .user-table tr:last-child td{border-bottom:none}
+  .user-table tr:hover td{background:var(--bg)}
+  .role-select{font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer}
+  .phone-input{font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);width:130px}
+  .save-user-btn{font-size:11px;padding:3px 10px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer}
+  /* WHATSAPP ALERT */
+  .wa-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center}
+  .wa-modal.open{display:flex}
+  .wa-card{background:#fff;border-radius:14px;padding:24px;width:360px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+  .wa-title{font-size:15px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .wa-sub{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5}
+  .wa-msg{width:100%;padding:10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;resize:none;min-height:80px;margin-bottom:12px}
+  .wa-actions{display:flex;gap:8px;justify-content:flex-end}
+  .wa-btn{padding:8px 16px;font-size:13px;font-weight:500;border-radius:var(--r);cursor:pointer;font-family:inherit;border:none}
+  .wa-send{background:#25D366;color:#fff}
+  .wa-skip{background:var(--bg);color:var(--text2);border:1px solid var(--border)}
+  /* BLOCKED OVERLAY */
+  .blocked{pointer-events:none;opacity:.5}
+  .blocked-msg{text-align:center;padding:20px;font-size:13px;color:var(--text2);background:var(--bg);border-radius:var(--r);border:1px dashed var(--border)}
 </style>
 </head>
 <body>
@@ -248,6 +287,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     </div>
     <div class="tr">
       <button class="btn btnp" onclick="refreshData()" id="rbtn">↻ Actualizar datos</button>
+      <span id="role-chip" class="role-badge role-operator">👤 Operador</span>
       <div class="uchip"><div class="uav" id="uav">?</div><span class="unm" id="unm">...</span></div>
       <button class="btn" onclick="signOut()">Salir</button>
     </div>
@@ -274,13 +314,46 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     <div class="tabs">
       <button class="tab active" onclick="switchTab('kanban',this)">📋 Tablero Kanban</button>
       <button class="tab" onclick="switchTab('lineas',this)">⬛ Líneas de trabajo</button>
+      <button class="tab" id="tab-admin" onclick="switchTab('admin',this)" style="display:none">⚙️ Administración</button>
     </div>
     <div class="view shown" id="view-kanban">
-      <div class="fbar">
-        <span class="flbl">Filtrar:</span>
-        <select id="f-linea" onchange="applyFilters()"><option value="">Todas las líneas</option><option>Sub Proceso</option><option>Inventarios</option><option>Equipo 1</option><option>Equipo 3</option><option>Equipo Panadería</option></select>
-        <select id="f-lider" onchange="applyFilters()"><option value="">Todos los líderes</option></select>
-        <select id="f-turno" onchange="applyFilters()"><option value="">Todos los turnos</option><option value="1">Turno 1</option><option value="2">Turno 2</option><option value="3">Turno 3</option><option value="4">Turno 4</option><option value="5">Turno 5</option><option value="6">Turno 6</option></select>
+      <div class="fbar" style="flex-direction:column;align-items:flex-start;gap:10px">
+        <!-- FILA 1: Tipo de proceso y Lider -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span class="flbl">Filtrar:</span>
+          <!-- Tipo de proceso -->
+          <div class="ms-wrap" id="ms-tipo">
+            <button class="ms-btn" onclick="toggleDrop('tipo')">
+              <span id="ms-tipo-lbl">Todos los tipos</span> ▾
+            </button>
+            <div class="ms-drop" id="drop-tipo">
+              <label class="ms-opt"><input type="checkbox" value="PRODUCTO TERMINADO" onchange="applyFilters()"> Producto Terminado</label>
+              <label class="ms-opt"><input type="checkbox" value="MATERIA PRIMA" onchange="applyFilters()"> Materia Prima</label>
+              <label class="ms-opt"><input type="checkbox" value="GRANEL" onchange="applyFilters()"> Granel</label>
+              <label class="ms-opt"><input type="checkbox" value="No Asignado" onchange="applyFilters()"> No Asignado</label>
+            </div>
+          </div>
+          <!-- Líneas (multi) -->
+          <div class="ms-wrap" id="ms-linea">
+            <button class="ms-btn" onclick="toggleDrop('linea')">
+              <span id="ms-linea-lbl">Todas las líneas</span> ▾
+            </button>
+            <div class="ms-drop" id="drop-linea">
+              <label class="ms-opt"><input type="checkbox" value="subproceso" onchange="applyFilters()"> Sub Proceso</label>
+              <label class="ms-opt"><input type="checkbox" value="inventarios" onchange="applyFilters()"> Inventarios</label>
+              <label class="ms-opt"><input type="checkbox" value="equipo1" onchange="applyFilters()"> Equipo 1</label>
+              <label class="ms-opt"><input type="checkbox" value="equipo3" onchange="applyFilters()"> Equipo 3</label>
+              <label class="ms-opt"><input type="checkbox" value="panaderia" onchange="applyFilters()"> Equipo Panadería</label>
+            </div>
+          </div>
+          <!-- Lider -->
+          <select id="f-lider" onchange="applyFilters()"><option value="">Todos los líderes</option></select>
+          <!-- Turno -->
+          <select id="f-turno" onchange="applyFilters()"><option value="">Todos los turnos</option><option value="1">Turno 1</option><option value="2">Turno 2</option><option value="3">Turno 3</option><option value="4">Turno 4</option><option value="5">Turno 5</option><option value="6">Turno 6</option></select>
+          <button class="ms-btn" onclick="clearFilters()" style="font-size:11px;color:var(--danger);border-color:var(--danger)">✕ Limpiar</button>
+        </div>
+        <!-- CHIPS de filtros activos -->
+        <div id="filter-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
       </div>
       <div class="srow">
         <div class="sc"><div class="sl">Total</div><div class="sv" id="st-t">—</div><div class="ss">órdenes</div></div>
@@ -300,6 +373,23 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
         <div id="lrows"></div>
       </div></div>
     </div>
+    <div class="view" id="view-admin">
+      <div class="admin-panel">
+        <div class="admin-title">⚙️ Gestión de usuarios y roles</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Asigná roles y números de WhatsApp a cada usuario. Los cambios se guardan en este navegador.</p>
+        <table class="user-table">
+          <thead><tr><th>Cuenta Microsoft</th><th>Nombre</th><th>Rol</th><th>WhatsApp</th><th></th></tr></thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+        <div style="margin-top:14px">
+          <button class="btn btnp" onclick="addUserRow()" style="font-size:12px">+ Agregar usuario</button>
+        </div>
+      </div>
+      <div class="admin-panel">
+        <div class="admin-title">📊 Resumen de actividad</div>
+        <div id="activity-log" style="font-size:12px;color:var(--text2);max-height:300px;overflow-y:auto"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -317,6 +407,19 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   </div>
 </div>
 <div class="lov" id="lov"><div class="spin"></div><div class="ltxt" id="lovtxt">Cargando...</div></div>
+
+<!-- WHATSAPP MODAL -->
+<div class="wa-modal" id="wa-modal">
+  <div class="wa-card">
+    <div class="wa-title">💬 Alerta de cambio de fase</div>
+    <div class="wa-sub" id="wa-sub">La orden cambió de fase. ¿Querés notificar al líder por WhatsApp?</div>
+    <textarea class="wa-msg" id="wa-msg"></textarea>
+    <div class="wa-actions">
+      <button class="wa-btn wa-skip" onclick="closeWa()">Omitir</button>
+      <button class="wa-btn wa-send" onclick="sendWa()">📲 Abrir WhatsApp</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -406,7 +509,7 @@ function showApp(){
   const n=account.name||account.username||'Usuario';
   document.getElementById('unm').textContent=n.split(' ')[0];
   document.getElementById('uav').textContent=n[0].toUpperCase();
-  loadOverrides();refreshData();
+  loadOverrides();applyRoleUI();refreshData();
 }
 
 // ════════════════════════════════════════
@@ -497,10 +600,55 @@ function gdr(p){
 function inR(ds,from,to){if(!from&&!to)return true;if(!ds)return false;const d=sod(new Date(ds));if(from&&d<sod(from))return false;if(to&&d>sod(to))return false;return true;}
 function setDate(p){period=p;document.querySelectorAll('.dpill').forEach(x=>x.classList.remove('active'));document.getElementById('dp-'+p).classList.add('active');document.getElementById('drange').textContent=gdr(p).lbl;applyFilters();}
 
+function getChecked(dropId){
+  return [...document.querySelectorAll(`#drop-${dropId} input:checked`)].map(x=>x.value);
+}
+function toggleDrop(id){
+  const d=document.getElementById('drop-'+id);
+  const b=document.querySelector('#ms-'+id+' .ms-btn');
+  const isOpen=d.classList.contains('open');
+  // close all
+  document.querySelectorAll('.ms-drop').forEach(x=>x.classList.remove('open'));
+  document.querySelectorAll('.ms-btn').forEach(x=>x.classList.remove('active'));
+  if(!isOpen){d.classList.add('open');b.classList.add('active');}
+}
+// Close dropdowns when clicking outside
+document.addEventListener('click',e=>{if(!e.target.closest('.ms-wrap')){document.querySelectorAll('.ms-drop').forEach(x=>x.classList.remove('open'));document.querySelectorAll('.ms-btn').forEach(x=>x.classList.remove('active'));}});
+function updateDropLabels(){
+  const tipos=getChecked('tipo'),lineas=getChecked('linea');
+  document.getElementById('ms-tipo-lbl').textContent=tipos.length?tipos.length+' tipo(s)':'Todos los tipos';
+  document.getElementById('ms-linea-lbl').textContent=lineas.length?lineas.length+' línea(s)':'Todas las líneas';
+  // chips
+  const chips=document.getElementById('filter-chips');
+  chips.innerHTML='';
+  const tipoNames={'PRODUCTO TERMINADO':'P.Term','MATERIA PRIMA':'M.Prima','GRANEL':'Granel','No Asignado':'N/A'};
+  const lineaNames={'subproceso':'Sub Proceso','inventarios':'Inventarios','equipo1':'Equipo 1','equipo3':'Equipo 3','panaderia':'Panadería'};
+  tipos.forEach(t=>{chips.innerHTML+=`<span class="chip">${tipoNames[t]||t}<button onclick="uncheckFilter('tipo','${t}')">✕</button></span>`;});
+  lineas.forEach(l=>{chips.innerHTML+=`<span class="chip">${lineaNames[l]||l}<button onclick="uncheckFilter('linea','${l}')">✕</button></span>`;});
+}
+function uncheckFilter(dropId,val){
+  const cb=document.querySelector(`#drop-${dropId} input[value="${val}"]`);
+  if(cb){cb.checked=false;applyFilters();}
+}
+function clearFilters(){
+  document.querySelectorAll('.ms-drop input').forEach(x=>x.checked=false);
+  document.getElementById('f-lider').value='';
+  document.getElementById('f-turno').value='';
+  updateDropLabels();
+  applyFilters();
+}
 function gf(){
-  const fl=document.getElementById('f-linea').value,fli=document.getElementById('f-lider').value,ftu=document.getElementById('f-turno').value,r=gdr(period);
-  const lm={'Sub Proceso':'subproceso','Inventarios':'inventarios','Equipo 1':'equipo1','Equipo 3':'equipo3','Equipo Panadería':'panaderia'};
-  return cards.filter(c=>{if(fl&&c.linea!==lm[fl])return false;if(fli&&c.responsable!==fli)return false;if(ftu&&c.turno!==parseInt(ftu))return false;if(!inR(c.fecha,r.from,r.to))return false;return true;});
+  const tipos=getChecked('tipo'),lineas=getChecked('linea');
+  const fli=document.getElementById('f-lider').value,ftu=document.getElementById('f-turno').value,r=gdr(period);
+  updateDropLabels();
+  return cards.filter(c=>{
+    if(tipos.length&&!tipos.includes(c.tipo))return false;
+    if(lineas.length&&!lineas.includes(c.linea))return false;
+    if(fli&&c.responsable!==fli)return false;
+    if(ftu&&c.turno!==parseInt(ftu))return false;
+    if(!inR(c.fecha,r.from,r.to))return false;
+    return true;
+  });
 }
 function applyFilters(){rBoard();if(document.getElementById('view-lineas').classList.contains('shown'))rLineas();}
 
@@ -573,11 +721,193 @@ function openM(c){
 }
 function advCard(c){const i=phI(c.fase);if(i<PHASES.length-1){c.fase=PHASES[i+1].id;const now=new Date().toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','');c.hist.push({fase:c.fase,ts:now});saveOvr(c.orden,c.fase,c.hist);closeM();applyFilters();setTimeout(()=>openM(c),60);}}
 function closeM(){document.getElementById('mbg').classList.remove('open');}
-function switchTab(n,b){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('shown'));document.getElementById('view-'+n).classList.add('shown');if(n==='lineas')rLineas();}
+function switchTab(n,b){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('shown'));document.getElementById('view-'+n).classList.add('shown');if(n==='lineas')rLineas();if(n==='admin'){renderUsersTable();renderActivityLog();}}
 function showLov(t){document.getElementById('lovtxt').textContent=t;document.getElementById('lov').classList.add('show');}
 function hideLov(){document.getElementById('lov').classList.remove('show');}
 function showToast(m,t){const e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(()=>e.classList.remove('show'),3500);}
 function setStatus(s){const d=document.getElementById('sdot'),t=document.getElementById('stxt');if(s==='ok'){d.style.background='#1A7A4A';t.innerHTML='<b>Conectado</b> — OneDrive en tiempo real';}else if(s==='loading'){d.style.background='#E8A020';t.innerHTML='Actualizando desde OneDrive...';}else{d.style.background='#C9341A';t.innerHTML='<b>Error de conexión</b> — verificar permisos';}}
+
+
+// ════════════════════════════════════════
+//  ROLES Y USUARIOS
+// ════════════════════════════════════════
+const ROLES = { admin: 'Admin', operator: 'Operador' };
+
+// Usuarios por defecto — el admin los edita en el panel
+function loadUsers(){
+  try{ return JSON.parse(localStorage.getItem('kgj_users')||'[]'); }
+  catch{ return []; }
+}
+function saveUsers(users){ localStorage.setItem('kgj_users', JSON.stringify(users)); }
+
+function getCurrentRole(){
+  if(!account) return 'operator';
+  const email = (account.username||'').toLowerCase();
+  const users = loadUsers();
+  const u = users.find(u => u.email.toLowerCase() === email);
+  return u ? u.role : 'operator';
+}
+
+function getCurrentPhone(){
+  if(!account) return '';
+  const email = (account.username||'').toLowerCase();
+  const users = loadUsers();
+  const u = users.find(u => u.email.toLowerCase() === email);
+  return u ? (u.phone||'') : '';
+}
+
+function applyRoleUI(){
+  const role = getCurrentRole();
+  const isAdmin = role === 'admin';
+  // Mostrar tab admin solo a admins
+  const tabAdmin = document.getElementById('tab-admin');
+  if(tabAdmin) tabAdmin.style.display = isAdmin ? 'block' : 'none';
+  // Actualizar badge de rol en topbar
+  const chip = document.getElementById('role-chip');
+  if(chip){
+    chip.textContent = isAdmin ? '⚡ Admin' : '👤 Operador';
+    chip.className = 'role-badge ' + (isAdmin ? 'role-admin' : 'role-operator');
+  }
+}
+
+// ── PANEL ADMIN ──
+function renderUsersTable(){
+  const users = loadUsers();
+  const tbody = document.getElementById('users-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = users.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px">No hay usuarios registrados. Hacé clic en "+ Agregar usuario".</td></tr>'
+    : users.map((u,i) => `
+      <tr>
+        <td><input style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);width:200px" value="${u.email}" onchange="updateUser(${i},'email',this.value)" placeholder="correo@ejemplo.com"></td>
+        <td><input style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);width:130px" value="${u.name||''}" onchange="updateUser(${i},'name',this.value)" placeholder="Nombre"></td>
+        <td>
+          <select class="role-select" onchange="updateUser(${i},'role',this.value)">
+            <option value="operator" ${u.role==='operator'?'selected':''}>Operador</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+          </select>
+        </td>
+        <td><input class="phone-input" value="${u.phone||''}" onchange="updateUser(${i},'phone',this.value)" placeholder="+506 8888-8888"></td>
+        <td><button onclick="removeUser(${i})" style="font-size:11px;padding:3px 8px;background:#FEF2F0;color:var(--danger);border:1px solid var(--danger);border-radius:var(--r);cursor:pointer">✕</button></td>
+      </tr>`).join('');
+}
+
+function addUserRow(){
+  const users = loadUsers();
+  users.push({email:'',name:'',role:'operator',phone:''});
+  saveUsers(users);
+  renderUsersTable();
+}
+
+function updateUser(i, field, val){
+  const users = loadUsers();
+  if(users[i]) users[i][field] = val;
+  saveUsers(users);
+  showToast('Usuario guardado ✓','ok');
+}
+
+function removeUser(i){
+  const users = loadUsers();
+  users.splice(i,1);
+  saveUsers(users);
+  renderUsersTable();
+}
+
+function renderActivityLog(){
+  const log = JSON.parse(localStorage.getItem('kgj_log')||'[]');
+  const el = document.getElementById('activity-log');
+  if(!el) return;
+  if(!log.length){ el.innerHTML='<p>Sin actividad registrada aún.</p>'; return; }
+  el.innerHTML = log.slice(-50).reverse().map(e =>
+    `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;gap:10px">
+      <span style="color:var(--text3);white-space:nowrap">${e.ts}</span>
+      <span><b>${e.user}</b> movió <b>${e.orden}</b> → <span style="color:var(--accent)">${e.fase}</span></span>
+    </div>`
+  ).join('');
+}
+
+function logActivity(orden, fase){
+  const log = JSON.parse(localStorage.getItem('kgj_log')||'[]');
+  const user = account ? (account.name||account.username||'Usuario') : 'Usuario';
+  const ts = new Date().toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  log.push({ts, user, orden, fase});
+  if(log.length > 200) log.splice(0, log.length - 200);
+  localStorage.setItem('kgj_log', JSON.stringify(log));
+}
+
+// ════════════════════════════════════════
+//  WHATSAPP ALERTAS
+// ════════════════════════════════════════
+let waPhone = '', waMsg = '';
+
+function triggerWaAlert(orden, nombreOrden, faseNueva, lider){
+  // Buscar teléfono del líder
+  const users = loadUsers();
+  const liderUser = users.find(u =>
+    (u.name||'').toLowerCase() === (lider||'').toLowerCase() ||
+    (u.email||'').toLowerCase().includes((lider||'').toLowerCase())
+  );
+  const phone = liderUser ? liderUser.phone : '';
+  const phaseName = PHASES.find(p=>p.id===faseNueva)?.name || faseNueva;
+  const msg = `🏭 *Kanban Producción - Grupo Jinca*
+
+Hola ${lider}, la orden *${orden.replace(/^0+/,'')}* (${nombreOrden}) fue movida a la fase *${phaseName}*.
+
+Fecha: ${new Date().toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+
+Por favor verificá el estado en el tablero.`;
+
+  waPhone = phone.replace(/[\s\-\+\(\)]/g,'');
+  waMsg   = msg;
+
+  document.getElementById('wa-sub').textContent =
+    `Orden ${orden.replace(/^0+/,'')} → ${phaseName}` +
+    (phone ? ` | Líder: ${lider} (${phone})` : ` | Líder: ${lider} (sin teléfono registrado)`);
+  document.getElementById('wa-msg').value = msg;
+  document.getElementById('wa-modal').classList.add('open');
+}
+
+function sendWa(){
+  const msg = document.getElementById('wa-msg').value;
+  const phone = waPhone || '';
+  const url = phone
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  closeWa();
+}
+
+function closeWa(){ document.getElementById('wa-modal').classList.remove('open'); }
+
+// ════════════════════════════════════════
+//  OVERRIDE advCard CON ROLES + WA + LOG
+// ════════════════════════════════════════
+const _origAdvCard = advCard;
+advCard = function(c){
+  const role = getCurrentRole();
+  const i = phI(c.fase);
+  if(i < PHASES.length-1){
+    c.fase = PHASES[i+1].id;
+    const now = new Date().toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','');
+    c.hist.push({fase:c.fase, ts:now + ' — ' + (account?.name||account?.username||'')});
+    saveOvr(c.orden, c.fase, c.hist);
+    logActivity(c.orden, PHASES.find(p=>p.id===c.fase)?.name||c.fase);
+    closeM();
+    applyFilters();
+    // Trigger WhatsApp alert
+    triggerWaAlert(c.orden, c.nombre, c.fase, c.responsable);
+    setTimeout(()=>openM(c),60);
+  }
+};
+
+// También en drag & drop — override saveOvr para loggear
+const _origSaveOvr = saveOvr;
+saveOvr = function(orden, fase, hist){
+  _origSaveOvr(orden, fase, hist);
+  logActivity(orden, PHASES.find(p=>p.id===fase)?.name||fase);
+  const card = cards.find(c=>c.orden===orden);
+  if(card) triggerWaAlert(orden, card.nombre, fase, card.responsable);
+};
 
 setDate('week');
 window.addEventListener('load',()=>initMsal());
