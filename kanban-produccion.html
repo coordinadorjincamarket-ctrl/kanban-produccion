@@ -589,19 +589,26 @@ function enableBtn(){
 
 async function initMsal(){
   setLStat('Cargando autenticación...');
-  // Esperar a que la librería cargue
   let tries=0;
-  while(typeof msal==='undefined'&&tries<40){await new Promise(r=>setTimeout(r,200));tries++;}
-  if(typeof msal==='undefined'){showLErr('No se pudo cargar la autenticación. Verificá tu conexión.');return;}
+  while(typeof msal==='undefined'&&tries<60){await new Promise(r=>setTimeout(r,200));tries++;}
+  if(typeof msal==='undefined'){showLErr('No se pudo cargar la autenticación. Recargá la página.');return;}
   try{
     msalApp=new msal.PublicClientApplication({
       auth:{clientId:CLIENT_ID,authority:AUTHORITY,redirectUri:REDIRECT},
-      cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:true},
+      cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true},
     });
     await msalApp.initialize();
-    // Popup mode - no redirect to handle
-    const resp = null;
-    if(resp&&resp.account){account=resp.account;showApp();return;}
+    // Manejar el código de retorno del redirect
+    try{
+      const resp=await msalApp.handleRedirectPromise();
+      if(resp&&resp.account){
+        account=resp.account;
+        // Limpiar URL sin recargar
+        window.history.replaceState({},'',REDIRECT);
+        showApp();return;
+      }
+    }catch(re){console.warn('Redirect handling:',re);}
+    // Verificar sesión existente
     const accs=msalApp.getAllAccounts();
     if(accs.length>0){account=accs[0];showApp();return;}
     enableBtn();
@@ -611,23 +618,17 @@ async function initMsal(){
 async function signIn(){
   if(!msalApp)return;
   const b=document.getElementById('lbtn'),t=document.getElementById('lbtxt');
-  if(b)b.disabled=true;if(t)t.textContent='Iniciando sesión...';
+  if(b)b.disabled=true;if(t)t.textContent='Redirigiendo a Microsoft...';
   try{
-    const resp = await msalApp.loginPopup({scopes:SCOPES,prompt:'select_account'});
-    if(resp && resp.account){ account=resp.account; showApp(); }
-  }catch(e){
-    showLErr('Error: '+e.message);enableBtn();
-  }
+    await msalApp.loginRedirect({scopes:SCOPES,prompt:'select_account'});
+  }catch(e){showLErr('Error: '+e.message);enableBtn();}
 }
 
-function signOut(){if(msalApp){msalApp.logoutPopup().catch(()=>{ account=null; document.getElementById('app').style.display='none'; document.getElementById('login-screen').style.display='flex'; enableBtn(); });}}
+function signOut(){if(msalApp)msalApp.logoutRedirect({postLogoutRedirectUri:REDIRECT});}
 
 async function getToken(){
   try{const r=await msalApp.acquireTokenSilent({scopes:SCOPES,account});return r.accessToken;}
-  catch(e){
-    try{const r=await msalApp.acquireTokenPopup({scopes:SCOPES,account});return r.accessToken;}
-    catch(e2){showToast('Error de autenticación: '+e2.message,'err');return null;}
-  }
+  catch(e){await msalApp.acquireTokenRedirect({scopes:SCOPES,account});return null;}
 }
 
 function showApp(){
