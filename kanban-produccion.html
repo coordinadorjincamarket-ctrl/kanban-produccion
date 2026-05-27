@@ -544,56 +544,91 @@ function enableBtn(){
 
 async function initMsal(){
   setLStat('');
-  enableBtn();
-  if(typeof msal === 'undefined'){
-    // MSAL aún no cargó — esperar
-    setLStat('Cargando librería de autenticación...');
-    let t=0;
-    while(typeof msal==='undefined' && t<30){ await new Promise(r=>setTimeout(r,300)); t++; }
-    if(typeof msal==='undefined'){
-      showLErr('No se pudo cargar la autenticación. Verificá tu conexión a internet.');
-      return;
-    }
-  }
-  setLStat('');
+  // Esperar MSAL
+  let t=0;
+  while(typeof msal==='undefined' && t<50){ await new Promise(r=>setTimeout(r,200)); t++; }
+  if(typeof msal==='undefined'){ showLErr('No se pudo cargar autenticación.'); return; }
+  
   try{
-    msalApp=new msal.PublicClientApplication({
-      auth:{clientId:CLIENT_ID,authority:AUTHORITY,redirectUri:REDIRECT},
-      cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true},
+    msalApp = new msal.PublicClientApplication({
+      auth:{
+        clientId: CLIENT_ID,
+        authority: AUTHORITY,
+        redirectUri: REDIRECT,
+      },
+      cache:{ cacheLocation:'localStorage', storeAuthStateInCookie:false },
     });
     await msalApp.initialize();
-    try{
-      const resp=await msalApp.handleRedirectPromise();
-      if(resp&&resp.account){
-        account=resp.account;
-        window.history.replaceState({},'',REDIRECT);
-        showApp();return;
-      }
-    }catch(re){console.warn(re);}
-    const accs=msalApp.getAllAccounts();
-    if(accs.length>0){account=accs[0];showApp();return;}
+    
+    // Limpiar URL si tiene código de auth
+    if(window.location.hash && window.location.hash.includes('code=')) {
+      window.history.replaceState({}, '', REDIRECT);
+    }
+    
+    // Verificar sesión existente
+    const accs = msalApp.getAllAccounts();
+    if(accs.length > 0){ account = accs[0]; showApp(); return; }
+    
+    enableBtn();
   }catch(e){
     console.error(e);
     showLErr('Error: '+e.message);
+    enableBtn();
   }
 }
-// Exponer globalmente para el loader dinámico
 window.initMsal = initMsal;
 
 async function signIn(){
-  if(!msalApp)return;
+  if(!msalApp){ showLErr('Autenticación no lista, esperá un momento.'); return; }
   const b=document.getElementById('lbtn'),t=document.getElementById('lbtxt');
-  if(b)b.disabled=true;if(t)t.textContent='Redirigiendo a Microsoft...';
+  if(b)b.disabled=true; if(t)t.textContent='Abriendo Microsoft...';
   try{
-    await msalApp.loginRedirect({scopes:SCOPES,prompt:'select_account'});
-  }catch(e){showLErr('Error: '+e.message);enableBtn();}
+    const resp = await msalApp.loginPopup({
+      scopes: SCOPES,
+      prompt: 'select_account'
+    });
+    if(resp && resp.account){
+      account = resp.account;
+      showApp();
+    }
+  }catch(e){
+    console.error(e);
+    if(e.errorCode === 'popup_window_error'){
+      showLErr('El popup fue bloqueado. En Chrome: hacé clic en el ícono 🚫 de la barra y permitir popups para este sitio.');
+    } else {
+      showLErr('Error: '+e.message);
+    }
+    enableBtn();
+  }
 }
 
-function signOut(){if(msalApp)msalApp.logoutRedirect({postLogoutRedirectUri:REDIRECT});}
+function signOut(){
+  if(msalApp){
+    msalApp.logoutPopup().then(()=>{
+      account=null;
+      document.getElementById('app').style.display='none';
+      document.getElementById('login-screen').style.display='flex';
+      enableBtn();
+    }).catch(()=>{
+      localStorage.clear();
+      location.reload();
+    });
+  }
+}
 
 async function getToken(){
-  try{const r=await msalApp.acquireTokenSilent({scopes:SCOPES,account});return r.accessToken;}
-  catch(e){await msalApp.acquireTokenRedirect({scopes:SCOPES,account});return null;}
+  try{
+    const r = await msalApp.acquireTokenSilent({scopes:SCOPES, account});
+    return r.accessToken;
+  }catch(e){
+    try{
+      const r = await msalApp.acquireTokenPopup({scopes:SCOPES, account});
+      return r.accessToken;
+    }catch(e2){
+      showToast('Sesión expirada, por favor recargá la página','err');
+      return null;
+    }
+  }
 }
 
 function showApp(){
@@ -1247,7 +1282,7 @@ function confirmAssign(){
 }
 
 setDate('week');
-window.addEventListener('load',()=>{ if(window.msalReady) initMsal(); });
+window.addEventListener('load', initMsal);
 </script>
 </body>
 </html>
