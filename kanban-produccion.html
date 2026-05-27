@@ -599,7 +599,8 @@ async function initMsal(){
       cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:true},
     });
     await msalApp.initialize();
-    const resp=await msalApp.handleRedirectPromise();
+    // Popup mode - no redirect to handle
+    const resp = null;
     if(resp&&resp.account){account=resp.account;showApp();return;}
     const accs=msalApp.getAllAccounts();
     if(accs.length>0){account=accs[0];showApp();return;}
@@ -610,16 +611,23 @@ async function initMsal(){
 async function signIn(){
   if(!msalApp)return;
   const b=document.getElementById('lbtn'),t=document.getElementById('lbtxt');
-  if(b)b.disabled=true;if(t)t.textContent='Redirigiendo...';
-  try{await msalApp.loginRedirect({scopes:SCOPES,prompt:'select_account'});}
-  catch(e){showLErr('Error: '+e.message);enableBtn();}
+  if(b)b.disabled=true;if(t)t.textContent='Iniciando sesión...';
+  try{
+    const resp = await msalApp.loginPopup({scopes:SCOPES,prompt:'select_account'});
+    if(resp && resp.account){ account=resp.account; showApp(); }
+  }catch(e){
+    showLErr('Error: '+e.message);enableBtn();
+  }
 }
 
-function signOut(){if(msalApp)msalApp.logoutRedirect({postLogoutRedirectUri:REDIRECT});}
+function signOut(){if(msalApp){msalApp.logoutPopup().catch(()=>{ account=null; document.getElementById('app').style.display='none'; document.getElementById('login-screen').style.display='flex'; enableBtn(); });}}
 
 async function getToken(){
   try{const r=await msalApp.acquireTokenSilent({scopes:SCOPES,account});return r.accessToken;}
-  catch(e){await msalApp.acquireTokenRedirect({scopes:SCOPES});return null;}
+  catch(e){
+    try{const r=await msalApp.acquireTokenPopup({scopes:SCOPES,account});return r.accessToken;}
+    catch(e2){showToast('Error de autenticación: '+e2.message,'err');return null;}
+  }
 }
 
 function showApp(){
