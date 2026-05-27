@@ -735,8 +735,16 @@ const ROLES = { admin: 'Admin', operator: 'Operador' };
 
 // Usuarios por defecto — el admin los edita en el panel
 function loadUsers(){
-  try{ return JSON.parse(localStorage.getItem('kgj_users')||'[]'); }
-  catch{ return []; }
+  try{
+    const stored = JSON.parse(localStorage.getItem('kgj_users')||'null');
+    if(stored) return stored;
+  } catch{}
+  // Usuarios por defecto — editables desde el panel Admin
+  return [
+    {email:'asistentegerenciaGj@hotmail.com', name:'Gerente Operaciones', role:'admin',     phone:'+50560670984'},
+    {email:'gerenciaoperaciones@grupojinca.com', name:'Gerencia',          role:'admin',     phone:'+50560670984'},
+    {email:'GPjinca@outlook.com',              name:'GP Jinca',            role:'admin',     phone:'+50560670984'},
+  ];
 }
 function saveUsers(users){ localStorage.setItem('kgj_users', JSON.stringify(users)); }
 
