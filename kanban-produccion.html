@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kanban Producción — Grupo Jinca</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>/* MSAL Browser v2.38.3 - inline */
 /*! @azure/msal-browser v2.38.3 2023-10-27 */
 "use strict";!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports):"function"==typeof define&&define.amd?define(["exports"],t):t((e="undefined"!=typeof globalThis?globalThis:e||self).msal={})}(this,(function(e){
@@ -231,6 +232,26 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   .toast.err{background:var(--danger)}
   .view{display:none}
   .view.shown{display:block}
+  /* DASHBOARD */
+  .db-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .db-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden}
+  .db-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+  .db-kpi-label{font-size:11px;color:var(--text2);font-weight:500}
+  .db-kpi-val{font-size:28px;font-weight:700}
+  .db-kpi-sub{font-size:11px;color:var(--text3)}
+  .db-kpi-icon{position:absolute;right:14px;top:14px;font-size:22px;opacity:.25}
+  .db-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px;margin-bottom:12px}
+  .db-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px}
+  .db-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+  .db-chart-wrap{position:relative;height:220px}
+  .db-table{width:100%;border-collapse:collapse;font-size:12px}
+  .db-table th{font-size:11px;font-weight:600;color:var(--text2);padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;background:var(--bg)}
+  .db-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+  .db-table tr:last-child td{border-bottom:none}
+  .db-table tr:hover td{background:var(--bg)}
+  .db-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
+  .db-bar{height:6px;border-radius:99px;background:var(--border);overflow:hidden;margin-top:4px}
+  .db-bar-fill{height:100%;border-radius:99px;transition:width .5s}
   /* ROLES */
   .role-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:600}
   .role-admin{background:#FEF3C7;color:#92400E}
@@ -314,6 +335,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     <div class="tabs">
       <button class="tab active" onclick="switchTab('kanban',this)">📋 Tablero Kanban</button>
       <button class="tab" onclick="switchTab('lineas',this)">⬛ Líneas de trabajo</button>
+      <button class="tab" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
       <button class="tab" id="tab-admin" onclick="switchTab('admin',this)" style="display:none">⚙️ Administración</button>
     </div>
     <div class="view shown" id="view-kanban">
@@ -373,6 +395,50 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
         <div id="lrows"></div>
       </div></div>
     </div>
+    <div class="view" id="view-dashboard">
+      <!-- KPI ROW -->
+      <div class="db-kpis" id="db-kpis"></div>
+      <!-- CHARTS ROW 1 -->
+      <div class="db-grid2">
+        <div class="db-card">
+          <div class="db-card-title">Órdenes por fase</div>
+          <div class="db-chart-wrap"><canvas id="ch-fases"></canvas></div>
+        </div>
+        <div class="db-card">
+          <div class="db-card-title">Órdenes por línea de trabajo</div>
+          <div class="db-chart-wrap"><canvas id="ch-lineas"></canvas></div>
+        </div>
+      </div>
+      <!-- CHARTS ROW 2 -->
+      <div class="db-grid2">
+        <div class="db-card">
+          <div class="db-card-title">Órdenes por tipo de producto</div>
+          <div class="db-chart-wrap"><canvas id="ch-tipos"></canvas></div>
+        </div>
+        <div class="db-card">
+          <div class="db-card-title">Producción por líder</div>
+          <div class="db-chart-wrap"><canvas id="ch-lideres"></canvas></div>
+        </div>
+      </div>
+      <!-- CHARTS ROW 3 -->
+      <div class="db-grid2">
+        <div class="db-card">
+          <div class="db-card-title">Tendencia diaria de cierres</div>
+          <div class="db-chart-wrap"><canvas id="ch-tendencia"></canvas></div>
+        </div>
+        <div class="db-card">
+          <div class="db-card-title">Producción por turno</div>
+          <div class="db-chart-wrap"><canvas id="ch-turnos"></canvas></div>
+        </div>
+      </div>
+      <!-- TABLE -->
+      <div class="db-card" style="margin-top:16px">
+        <div class="db-card-title">Resumen por familia de producto</div>
+        <div style="overflow-x:auto">
+          <table class="db-table" id="db-familia-table"></table>
+        </div>
+      </div>
+    </div>
     <div class="view" id="view-admin">
       <div class="admin-panel">
         <div class="admin-title">⚙️ Gestión de usuarios y roles</div>
@@ -407,6 +473,59 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   </div>
 </div>
 <div class="lov" id="lov"><div class="spin"></div><div class="ltxt" id="lovtxt">Cargando...</div></div>
+
+<!-- ASIGNACIÓN MODAL -->
+<div class="mbg" id="assign-modal" onclick="if(event.target===this)closeAssign()">
+  <div class="modal">
+    <div class="mtop">
+      <div>
+        <div class="mop" id="assign-op"></div>
+        <div class="mttl">Asignar equipo y líder</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">Antes de pasar a Alistado de materiales, asigná el equipo y líder responsable.</div>
+      </div>
+      <button class="xcbtn" onclick="closeAssign()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:8px">
+      <div>
+        <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Línea de trabajo / Equipo</label>
+        <select id="assign-linea" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);font-family:inherit">
+          <option value="">— Seleccioná un equipo —</option>
+          <option value="subproceso">🧪 Sub Proceso (Materia Prima)</option>
+          <option value="inventarios">📦 Inventarios (Granel)</option>
+          <option value="equipo1">👥 Equipo 1 (Prod. Terminado)</option>
+          <option value="equipo3">👥 Equipo 3 (Prod. Terminado)</option>
+          <option value="panaderia">🍞 Equipo Panadería</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Líder de proceso</label>
+        <select id="assign-lider" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);font-family:inherit">
+          <option value="">— Seleccioná un líder —</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Turno</label>
+        <select id="assign-turno" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);font-family:inherit">
+          <option value="0">— Sin turno —</option>
+          <option value="1">Turno 1</option>
+          <option value="2">Turno 2</option>
+          <option value="3">Turno 3</option>
+          <option value="4">Turno 4</option>
+          <option value="5">Turno 5</option>
+          <option value="6">Turno 6</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Observación (opcional)</label>
+        <textarea id="assign-obs" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;resize:none;min-height:60px" placeholder="Notas sobre esta asignación..."></textarea>
+      </div>
+    </div>
+    <div class="mact" style="margin-top:16px">
+      <button class="btn" onclick="closeAssign()">Cancelar</button>
+      <button class="btn btnp" onclick="confirmAssign()">✓ Confirmar y avanzar</button>
+    </div>
+  </div>
+</div>
 
 <!-- WHATSAPP MODAL -->
 <div class="wa-modal" id="wa-modal">
@@ -650,7 +769,7 @@ function gf(){
     return true;
   });
 }
-function applyFilters(){rBoard();if(document.getElementById('view-lineas').classList.contains('shown'))rLineas();}
+function applyFilters(){rBoard();if(document.getElementById('view-lineas').classList.contains('shown'))rLineas();if(document.getElementById('view-dashboard').classList.contains('shown'))renderDashboard();}
 
 // ════════════════════════════════════════
 //  KANBAN
@@ -721,7 +840,7 @@ function openM(c){
 }
 function advCard(c){const i=phI(c.fase);if(i<PHASES.length-1){c.fase=PHASES[i+1].id;const now=new Date().toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','');c.hist.push({fase:c.fase,ts:now});saveOvr(c.orden,c.fase,c.hist);closeM();applyFilters();setTimeout(()=>openM(c),60);}}
 function closeM(){document.getElementById('mbg').classList.remove('open');}
-function switchTab(n,b){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('shown'));document.getElementById('view-'+n).classList.add('shown');if(n==='lineas')rLineas();if(n==='admin'){renderUsersTable();renderActivityLog();}}
+function switchTab(n,b){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('shown'));document.getElementById('view-'+n).classList.add('shown');if(n==='lineas')rLineas();if(n==='dashboard')renderDashboard();if(n==='admin'){renderUsersTable();renderActivityLog();}}
 function showLov(t){document.getElementById('lovtxt').textContent=t;document.getElementById('lov').classList.add('show');}
 function hideLov(){document.getElementById('lov').classList.remove('show');}
 function showToast(m,t){const e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(()=>e.classList.remove('show'),3500);}
@@ -892,9 +1011,14 @@ function closeWa(){ document.getElementById('wa-modal').classList.remove('open')
 // ════════════════════════════════════════
 const _origAdvCard = advCard;
 advCard = function(c){
-  const role = getCurrentRole();
   const i = phI(c.fase);
   if(i < PHASES.length-1){
+    // Si está en apertura → mostrar modal de asignación primero
+    if(c.fase === 'apertura'){
+      closeM();
+      openAssign(c);
+      return;
+    }
     c.fase = PHASES[i+1].id;
     const now = new Date().toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','');
     c.hist.push({fase:c.fase, ts:now + ' — ' + (account?.name||account?.username||'')});
@@ -902,7 +1026,6 @@ advCard = function(c){
     logActivity(c.orden, PHASES.find(p=>p.id===c.fase)?.name||c.fase);
     closeM();
     applyFilters();
-    // Trigger WhatsApp alert
     triggerWaAlert(c.orden, c.nombre, c.fase, c.responsable);
     setTimeout(()=>openM(c),60);
   }
@@ -916,6 +1039,238 @@ saveOvr = function(orden, fase, hist){
   const card = cards.find(c=>c.orden===orden);
   if(card) triggerWaAlert(orden, card.nombre, fase, card.responsable);
 };
+
+// Interceptar drag & drop desde apertura para mostrar modal de asignación
+const _origRBoard = rBoard;
+rBoard = function(){
+  _origRBoard();
+  // Sobreescribir drop en alistado para pedir asignación si viene de apertura
+  const dzAlistado = document.getElementById('dz-alistado');
+  if(dzAlistado){
+    const oldDrop = dzAlistado.ondrop;
+    dzAlistado.addEventListener('drop', function(e){
+      if(dragCard && dragCard.fase === 'apertura'){
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        dzAlistado.classList.remove('over');
+        openAssign(dragCard);
+      }
+    }, true);
+  }
+};
+
+
+// ════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════
+let dbCharts = {};
+
+function destroyChart(id){
+  if(dbCharts[id]){ dbCharts[id].destroy(); delete dbCharts[id]; }
+}
+
+function renderDashboard(){
+  const vis = gf(); // respeta filtros activos
+  if(!vis.length){
+    document.getElementById('db-kpis').innerHTML='<p style="color:var(--text3);font-size:13px">Sin datos para el período seleccionado.</p>';
+    return;
+  }
+
+  // ── KPIs ──
+  const total     = vis.length;
+  const cerradas  = vis.filter(c=>c.fase==='cierre').length;
+  const pct       = Math.round((cerradas/total)*100);
+  const enProceso = vis.filter(c=>c.fase!=='cierre'&&c.fase!=='apertura').length;
+  const sinLider  = vis.filter(c=>c.responsable==='Sin asignar').length;
+  const totalCant = vis.reduce((s,c)=>s+(c.cantEst||0),0);
+  const prodCant  = vis.reduce((s,c)=>s+(c.cantProd||0),0);
+  const pctProd   = totalCant>0?Math.round((prodCant/totalCant)*100):0;
+
+  const kpis = [
+    {label:'Total órdenes',     val:total,          sub:'en el período',        icon:'📋', color:'#1B4FD8'},
+    {label:'Completadas',       val:cerradas,        sub:`${pct}% del total`,   icon:'✅', color:'#1A7A4A'},
+    {label:'En proceso',        val:enProceso,       sub:'activas',              icon:'⚙️', color:'#8B4A0E'},
+    {label:'Sin líder',         val:sinLider,        sub:'sin asignar',          icon:'👤', color:'#C9341A'},
+    {label:'Unidades a producir',val:totalCant.toLocaleString(), sub:'estándar', icon:'📦', color:'#5B35B0'},
+    {label:'Unidades producidas',val:prodCant.toLocaleString(),  sub:`${pctProd}% completado`, icon:'🏭', color:'#1A7A4A'},
+  ];
+
+  document.getElementById('db-kpis').innerHTML = kpis.map(k=>`
+    <div class="db-kpi" style="border-top-color:${k.color}">
+      <div class="db-kpi-icon">${k.icon}</div>
+      <div class="db-kpi-label">${k.label}</div>
+      <div class="db-kpi-val" style="color:${k.color}">${k.val}</div>
+      <div class="db-kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  const CHART_COLORS = ['#1B4FD8','#1A7A4A','#8B4A0E','#5B35B0','#C9341A','#0891B2','#D97706','#059669'];
+
+  // ── CHART: Órdenes por fase ──
+  destroyChart('fases');
+  const faseLabels = PHASES.map(p=>p.name);
+  const faseCounts = PHASES.map(p=>vis.filter(c=>c.fase===p.id).length);
+  const faseColors = ['#6B6860','#8B4A0E','#1B4FD8','#5B35B0','#1A7A4A'];
+  dbCharts['fases'] = new Chart(document.getElementById('ch-fases'),{
+    type:'bar',
+    data:{labels:faseLabels, datasets:[{data:faseCounts, backgroundColor:faseColors, borderRadius:6, borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+
+  // ── CHART: Por línea ──
+  destroyChart('lineas');
+  const lineaData = LINEAS.map(l=>({name:l.name,count:vis.filter(c=>c.linea===l.id).length,color:l.color}));
+  dbCharts['lineas'] = new Chart(document.getElementById('ch-lineas'),{
+    type:'doughnut',
+    data:{labels:lineaData.map(l=>l.name), datasets:[{data:lineaData.map(l=>l.count), backgroundColor:lineaData.map(l=>l.color), borderWidth:2, borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  // ── CHART: Por tipo ──
+  destroyChart('tipos');
+  const tipoMap = {};
+  vis.forEach(c=>{ tipoMap[c.tipo]=(tipoMap[c.tipo]||0)+1; });
+  const tipoKeys = Object.keys(tipoMap);
+  dbCharts['tipos'] = new Chart(document.getElementById('ch-tipos'),{
+    type:'doughnut',
+    data:{labels:tipoKeys, datasets:[{data:tipoKeys.map(k=>tipoMap[k]), backgroundColor:CHART_COLORS, borderWidth:2, borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  // ── CHART: Por líder ──
+  destroyChart('lideres');
+  const liderMap = {};
+  vis.forEach(c=>{ const l=c.responsable||'Sin asignar'; liderMap[l]=(liderMap[l]||0)+(c.cantProd||0); });
+  const liderKeys = Object.keys(liderMap).filter(k=>k!=='Sin asignar').sort((a,b)=>liderMap[b]-liderMap[a]).slice(0,8);
+  dbCharts['lideres'] = new Chart(document.getElementById('ch-lideres'),{
+    type:'bar',
+    data:{labels:liderKeys, datasets:[{label:'Unidades producidas', data:liderKeys.map(k=>liderMap[k]), backgroundColor:'#1B4FD8', borderRadius:6, borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{ticks:{font:{size:10}}}}}
+  });
+
+  // ── CHART: Tendencia diaria de cierres ──
+  destroyChart('tendencia');
+  const fechaMap = {};
+  vis.filter(c=>c.fase==='cierre'&&c.fecha).forEach(c=>{ fechaMap[c.fecha]=(fechaMap[c.fecha]||0)+1; });
+  const fechas = Object.keys(fechaMap).sort().slice(-14);
+  dbCharts['tendencia'] = new Chart(document.getElementById('ch-tendencia'),{
+    type:'line',
+    data:{labels:fechas.map(f=>f.slice(5)), datasets:[{label:'Cierres', data:fechas.map(f=>fechaMap[f]), borderColor:'#1A7A4A', backgroundColor:'rgba(26,122,74,.1)', fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#1A7A4A'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+
+  // ── CHART: Por turno ──
+  destroyChart('turnos');
+  const turnoMap = {};
+  vis.forEach(c=>{ const t='Turno '+(c.turno||0); turnoMap[t]=(turnoMap[t]||0)+1; });
+  const turnoKeys = Object.keys(turnoMap).sort();
+  dbCharts['turnos'] = new Chart(document.getElementById('ch-turnos'),{
+    type:'bar',
+    data:{labels:turnoKeys, datasets:[{data:turnoKeys.map(k=>turnoMap[k]), backgroundColor:CHART_COLORS, borderRadius:6, borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+
+  // ── TABLE: Por familia ──
+  const familiaMap = {};
+  vis.forEach(c=>{
+    if(!familiaMap[c.familia]) familiaMap[c.familia]={total:0,cerradas:0,cantEst:0,cantProd:0};
+    familiaMap[c.familia].total++;
+    if(c.fase==='cierre') familiaMap[c.familia].cerradas++;
+    familiaMap[c.familia].cantEst+=(c.cantEst||0);
+    familiaMap[c.familia].cantProd+=(c.cantProd||0);
+  });
+  const familias = Object.keys(familiaMap).sort();
+  const maxTotal = Math.max(...familias.map(f=>familiaMap[f].total));
+  document.getElementById('db-familia-table').innerHTML = `
+    <thead><tr>
+      <th>Familia</th><th>Órdenes</th><th>Cerradas</th><th>% Avance</th><th>Cant. estándar</th><th>Cant. producida</th><th>% Producción</th>
+    </tr></thead>
+    <tbody>${familias.map(f=>{
+      const d=familiaMap[f];
+      const pctAv=Math.round((d.cerradas/d.total)*100);
+      const pctPr=d.cantEst>0?Math.round((d.cantProd/d.cantEst)*100):0;
+      const barW=Math.round((d.total/maxTotal)*100);
+      return `<tr>
+        <td><b>${f||'—'}</b></td>
+        <td>
+          ${d.total}
+          <div class="db-bar"><div class="db-bar-fill" style="width:${barW}%;background:#1B4FD8"></div></div>
+        </td>
+        <td>${d.cerradas}</td>
+        <td><span class="db-badge" style="background:${pctAv>=80?'#E5F5EC':'pctAv>=50?#FDF0E0':'#FEF2F0'};color:${pctAv>=80?'#1A7A4A':pctAv>=50?'#8B4A0E':'#C9341A'}">${pctAv}%</span></td>
+        <td>${d.cantEst.toLocaleString()}</td>
+        <td>${d.cantProd.toLocaleString()}</td>
+        <td><span class="db-badge" style="background:${pctPr>=80?'#E5F5EC':pctPr>=50?'#FDF0E0':'#FEF2F0'};color:${pctPr>=80?'#1A7A4A':pctPr>=50?'#8B4A0E':'#C9341A'}">${pctPr}%</span></td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+
+// ════════════════════════════════════════
+//  ASIGNACIÓN DE EQUIPO Y LÍDER
+// ════════════════════════════════════════
+let assignCard = null;
+
+function openAssign(c){
+  assignCard = c;
+  document.getElementById('assign-op').textContent = 'OP ' + c.orden.replace(/^0+/,'') + ' — ' + c.nombre;
+
+  // Pre-seleccionar valores actuales
+  document.getElementById('assign-linea').value = c.linea || '';
+  document.getElementById('assign-turno').value = c.turno || 0;
+  document.getElementById('assign-obs').value = '';
+
+  // Poblar líderes desde usuarios registrados + líderes del Excel
+  const liderSel = document.getElementById('assign-lider');
+  const users = loadUsers();
+  const excelLiders = [...new Set(cards.map(x=>x.responsable))].filter(l=>l&&l!=='Sin asignar').sort();
+  const allLiders = [...new Set([...users.map(u=>u.name).filter(Boolean), ...excelLiders])].sort();
+
+  liderSel.innerHTML = '<option value="">— Seleccioná un líder —</option>' +
+    allLiders.map(l=>`<option value="${l}" ${l===c.responsable?'selected':''}>${l}</option>`).join('');
+
+  document.getElementById('assign-modal').classList.add('open');
+}
+
+function closeAssign(){
+  document.getElementById('assign-modal').classList.remove('open');
+  assignCard = null;
+}
+
+function confirmAssign(){
+  if(!assignCard) return;
+  const linea  = document.getElementById('assign-linea').value;
+  const lider  = document.getElementById('assign-lider').value;
+  const turno  = parseInt(document.getElementById('assign-turno').value)||0;
+  const obs    = document.getElementById('assign-obs').value.trim();
+
+  if(!linea){ showToast('Seleccioná un equipo antes de continuar','err'); return; }
+  if(!lider){ showToast('Seleccioná un líder antes de continuar','err'); return; }
+
+  // Aplicar asignación
+  assignCard.linea       = linea;
+  assignCard.responsable = lider;
+  assignCard.turno       = turno;
+
+  // Avanzar fase
+  const i = phI(assignCard.fase);
+  if(i < PHASES.length-1){
+    assignCard.fase = PHASES[i+1].id;
+    const now = new Date().toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','');
+    const obsNote = obs ? ` | Obs: ${obs}` : '';
+    assignCard.hist.push({
+      fase: assignCard.fase,
+      ts: now + ` — Asignado a ${lider} / ${LINEAS.find(l=>l.id===linea)?.name||linea}${obsNote}`
+    });
+    saveOvr(assignCard.orden, assignCard.fase, assignCard.hist);
+    logActivity(assignCard.orden, PHASES.find(p=>p.id===assignCard.fase)?.name||assignCard.fase);
+    closeAssign();
+    closeM();
+    applyFilters();
+    // WhatsApp alert
+    triggerWaAlert(assignCard.orden, assignCard.nombre, assignCard.fase, lider);
+    showToast(`✓ Orden asignada a ${lider}`, 'ok');
+  }
+}
 
 setDate('week');
 window.addEventListener('load',()=>initMsal());
